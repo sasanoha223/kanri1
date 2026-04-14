@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>カフェ在庫管理</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+}
+
+/* ヘッダー */
+.header {
+    background: #2c3e50;
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* コンテナ */
+.container {
+    padding: 16px;
+}
+
+/* 上の操作バー */
+.top-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+/* ボタン */
+.btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.add { background: #27ae60; }
+.plus { background: #2980b9; }
+.minus { background: #f39c12; }
+.delete { background: #e74c3c; }
+
+/* セレクト */
+select {
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* テーブル */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+th {
+    background: #34495e;
+    color: white;
+    padding: 12px;
+    text-align: left;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+/* 在庫ボタン配置 */
+.stock-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 在庫少ない強調 */
+.low-stock-row {
+    background: #fff5f5;
+}
+
+.low-stock-row td {
+    border-left: 4px solid #e74c3c;
+}
+
+/* ホバー */
+tr:hover {
+    background: #f9fbfc;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<div>カフェ在庫管理</div>
+<div>ログイン中：{{ username }}</div>
+</div>
+
+<div class="container">
+
+<div class="top-bar">
+
+<span>絞り込み</span>
+
+<select id="categoryFilter" onchange="filterCategory()">
+<option value="">すべて</option>
+<option>コーヒー豆</option>
+<option>ドリンク材料</option>
+<option>フード</option>
+<option>デザート</option>
+<option>消耗品</option>
+</select>
+
+<a href="/add" class="btn add">＋ 商品追加</a>
+
+<a href="/logout" class="btn delete">ログアウト</a>
+
+</div>
+
+<table>
+<thead>
+<tr>
+<th>名前</th>
+<th>ジャンル</th>
+<th>在庫</th>
+<th>操作</th>
+</tr>
+</thead>
+
+<tbody>
+{% for p in products %}
+<tr data-category="{{ p.category }}" id="row-{{ p.id }}"
+class="{% if p.stock <= 2 %}low-stock-row{% endif %}">
+
+<td>{{ p.name }}</td>
+<td>{{ p.category }}</td>
+
+<td>
+<div class="stock-box">
+<span id="stock-{{ p.id }}">{{ p.stock }}</span>
+
+<button class="btn plus" onclick="updateStock({{ p.id }},1)">＋</button>
+<button class="btn minus" onclick="updateStock({{ p.id }},-1)">－</button>
+</div>
+</td>
+
+<td>
+<a href="/delete/{{ p.id }}" class="btn delete"
+onclick="return confirm('削除しますか？')">削除</a>
+</td>
+
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+</div>
+
+<script>
+function updateStock(id, change){
+fetch("/update/"+id+"/"+change)
+.then(r=>r.json())
+.then(d=>{
+if(d.success){
+document.getElementById("stock-"+id).innerText = d.stock;
+}
+});
+}
+
+function filterCategory(){
+let val = document.getElementById("categoryFilter").value;
+
+document.querySelectorAll("tbody tr").forEach(r=>{
+r.style.display = (val=="" || r.dataset.category==val) ? "" : "none";
+});
+}
+</script>
+
+</body>
+</html>

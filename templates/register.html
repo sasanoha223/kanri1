@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>登録</title>
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    background: #f4f6f8;
+}
+
+.box {
+    margin-top: 80px;
+    display: inline-block;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+input {
+    margin: 8px;
+    padding: 6px;
+}
+
+button {
+    padding: 8px 12px;
+    background: green;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
+
+.error {
+    color: red;
+    margin-bottom: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h1>ユーザー登録</h1>
+
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+
+<form method="POST">
+<input name="username" placeholder="ユーザー名"><br>
+<input name="password" type="password" placeholder="パスワード"><br>
+<button type="submit">登録</button>
+</form>
+
+<br>
+<a href="/login">ログインへ</a>
+
+</div>
+
+</body>
+</html>
