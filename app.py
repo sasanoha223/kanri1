@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, session, jsonify
+from flask import Flask, render_template, request, redirect, session, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = "secret-key"
 
+# データベース設定
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 
@@ -33,7 +34,7 @@ def is_logged_in():
     return session.get("user_id")
 
 # -----------------
-# ユーザー登録（重複チェックあり）
+# 新規登録
 # -----------------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -42,13 +43,8 @@ def register():
         password = generate_password_hash(request.form['password'])
 
         # 重複チェック
-        existing_user = User.query.filter_by(username=username).first()
-
-        if existing_user:
-            return render_template(
-                "register.html",
-                error="その名前はもう使用されています"
-            )
+        if User.query.filter_by(username=username).first():
+            return render_template("register.html", error="その名前はもう使用されています")
 
         user = User(username=username, password=password)
         db.session.add(user)
@@ -64,17 +60,14 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        user = User.query.filter_by(username=request.form['username']).first()
 
-        user = User.query.filter_by(username=username).first()
-
-        if user and check_password_hash(user.password, password):
+        if user and check_password_hash(user.password, request.form['password']):
             session["user_id"] = user.id
             session["username"] = user.username
             return redirect('/')
-        else:
-            return "ログイン失敗"
+
+        return "ログイン失敗"
 
     return render_template('login.html')
 
@@ -87,7 +80,7 @@ def logout():
     return redirect('/login')
 
 # -----------------
-# トップ（ユーザー別）
+# 一覧ページ
 # -----------------
 @app.route('/')
 def index():
@@ -95,12 +88,9 @@ def index():
         return redirect('/login')
 
     products = Product.query.filter_by(user_id=session["user_id"]).all()
-
-    return render_template(
-        'index.html',
-        products=products,
-        username=session.get("username", "不明ユーザー")
-    )
+    return render_template('index.html',
+                           products=products,
+                           username=session.get("username"))
 
 # -----------------
 # 商品追加
@@ -117,16 +107,38 @@ def add():
             category=request.form['category'],
             user_id=session["user_id"]
         )
-
         db.session.add(product)
         db.session.commit()
-
         return redirect('/')
 
     return render_template('add.html')
 
 # -----------------
-# 在庫更新
+# 編集
+# -----------------
+@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+def edit(id):
+    if not is_logged_in():
+        return redirect('/login')
+
+    product = Product.query.get(id)
+
+    # 他人のデータ防止
+    if not product or product.user_id != session["user_id"]:
+        return "エラー"
+
+    if request.method == 'POST':
+        product.name = request.form['name']
+        product.stock = int(request.form['stock'])
+        product.category = request.form['category']
+
+        db.session.commit()
+        return redirect('/')
+
+    return render_template('edit.html', product=product)
+
+# -----------------
+# 在庫更新（＋－ボタン）
 # -----------------
 @app.route('/update/<int:id>/<change>')
 def update(id, change):
@@ -138,12 +150,12 @@ def update(id, change):
     if product and product.user_id == session["user_id"]:
         product.stock += int(change)
 
+        # マイナス防止
         if product.stock < 0:
             product.stock = 0
 
         db.session.commit()
-
-        return jsonify({"success": True, "stock": product.stock})
+        return jsonify({"success": True})
 
     return jsonify({"success": False})
 
@@ -162,6 +174,27 @@ def delete(id):
         db.session.commit()
 
     return redirect('/')
+
+# -----------------
+# CSVダウンロード
+# -----------------
+@app.route('/download')
+def download():
+    if not is_logged_in():
+        return redirect('/login')
+
+    products = Product.query.filter_by(user_id=session["user_id"]).all()
+
+    # CSV作成
+    csv_data = "商品名,ジャンル,在庫\n"
+    for p in products:
+        csv_data += f"{p.name},{p.category},{p.stock}\n"
+
+    return Response(
+        csv_data,
+        mimetype='text/csv',
+        headers={"Content-Disposition": "attachment;filename=stock.csv"}
+    )
 
 # -----------------
 # 起動

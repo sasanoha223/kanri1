@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>商品追加</title>
+<title>商品編集</title>
 
 <style>
 body {
@@ -49,22 +49,22 @@ button {
 <body>
 
 <div class="box">
-<h2>商品追加</h2>
+<h2>商品編集</h2>
 
 <form method="POST">
-<input name="name" placeholder="商品名"><br>
+<input name="name" value="{{ product.name }}"><br>
 
 <select name="category">
-<option>コーヒー豆</option>
-<option>ドリンク材料</option>
-<option>フード</option>
-<option>デザート</option>
-<option>消耗品</option>
+<option {% if product.category=='コーヒー豆' %}selected{% endif %}>コーヒー豆</option>
+<option {% if product.category=='ドリンク材料' %}selected{% endif %}>ドリンク材料</option>
+<option {% if product.category=='フード' %}selected{% endif %}>フード</option>
+<option {% if product.category=='デザート' %}selected{% endif %}>デザート</option>
+<option {% if product.category=='消耗品' %}selected{% endif %}>消耗品</option>
 </select><br>
 
-<input name="stock" type="number" placeholder="在庫（半角数字）"><br>
+<input name="stock" type="number" value="{{ product.stock }}"><br>
 
-<button type="submit">追加</button>
+<button type="submit">保存</button>
 </form>
 
 <a href="/"><button class="back">戻る</button></a>

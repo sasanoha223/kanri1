@@ -3,23 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <title>ログイン</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f4f6f8;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.box {
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    width:300px;
+    text-align:center;
+}
+
+h2 { margin-bottom:20px; }
+
+input {
+    width:90%;
+    padding:10px;
+    margin:10px 0;
+    font-size:18px;
+}
+
+button {
+    width:100%;
+    padding:12px;
+    background:#27ae60;
+    color:white;
+    border:none;
+    border-radius:8px;
+    font-size:18px;
+}
+
+a { display:block; margin-top:10px; }
+</style>
 </head>
+
 <body>
 
-<h1>ログイン</h1>
+<div class="box">
+<h2>ログイン</h2>
 
 <form method="POST">
-ユーザー名<br>
-<input name="username"><br>
-
-パスワード<br>
-<input name="password" type="password"><br>
+<input name="username" placeholder="ユーザー名"><br>
+<input name="password" type="password" placeholder="パスワード"><br>
 
 <button type="submit">ログイン</button>
 </form>
 
-<br>
-<a href="/register">新規登録</a>
+<a href="/register">新規登録はこちら</a>
+</div>
 
 </body>
 </html>

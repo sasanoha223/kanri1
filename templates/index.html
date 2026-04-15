@@ -2,106 +2,68 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>カフェ在庫管理</title>
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f6f8;
-    margin: 0;
-}
+body { font-family: Arial; background:#f4f6f8; margin:0; }
 
 /* ヘッダー */
 .header {
-    background: #2c3e50;
-    color: white;
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background:#2c3e50;
+    color:white;
+    padding:15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
 
-/* コンテナ */
-.container {
-    padding: 16px;
+.header-right {
+    display:flex;
+    gap:10px;
+    align-items:center;
 }
 
-/* 上の操作バー */
-.top-bar {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
+/* フィルター */
+.filters {
+    padding:10px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+input, select {
+    padding:8px;
+    font-size:16px;
 }
 
 /* ボタン */
 .btn {
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    color: white;
-    font-size: 14px;
-    text-decoration: none;
-    display: inline-block;
+    padding:8px;
+    border:none;
+    border-radius:6px;
+    color:white;
 }
 
-.add { background: #27ae60; }
-.plus { background: #2980b9; }
-.minus { background: #f39c12; }
-.delete { background: #e74c3c; }
+.add{background:green;}
+.edit{background:blue;}
+.delete{background:red;}
+.plus{background:green;}
+.minus{background:orange;}
+.logout{background:#e74c3c;}
 
-/* セレクト */
-select {
-    padding: 6px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-}
+/* 在庫 */
+.low{background:#fff0d6;}
+.out{background:#ffd6d6;}
 
 /* テーブル */
 table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    width:100%;
+    background:white;
+    border-collapse:collapse;
 }
 
-th {
-    background: #34495e;
-    color: white;
-    padding: 12px;
-    text-align: left;
-}
-
-td {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-}
-
-/* 在庫ボタン配置 */
-.stock-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* 在庫少ない強調 */
-.low-stock-row {
-    background: #fff5f5;
-}
-
-.low-stock-row td {
-    border-left: 4px solid #e74c3c;
-}
-
-/* ホバー */
-tr:hover {
-    background: #f9fbfc;
+th,td {
+    padding:10px;
+    border-bottom:1px solid #ddd;
 }
 </style>
 </head>
@@ -109,18 +71,24 @@ tr:hover {
 <body>
 
 <div class="header">
-<div>カフェ在庫管理</div>
-<div>ログイン中：{{ username }}</div>
+<span>在庫管理</span>
+
+<div class="header-right">
+<span>{{ username }}</span>
+
+<a href="/logout"
+onclick="return confirm('本当にログアウトしますか？')"
+class="btn logout">ログアウト</a>
+
+</div>
 </div>
 
-<div class="container">
+<div class="filters">
 
-<div class="top-bar">
+<input id="search" placeholder="検索" onkeyup="filter()">
 
-<span>絞り込み</span>
-
-<select id="categoryFilter" onchange="filterCategory()">
-<option value="">すべて</option>
+<select id="cat" onchange="filter()">
+<option value="">カテゴリ</option>
 <option>コーヒー豆</option>
 <option>ドリンク材料</option>
 <option>フード</option>
@@ -128,67 +96,67 @@ tr:hover {
 <option>消耗品</option>
 </select>
 
-<a href="/add" class="btn add">＋ 商品追加</a>
+<select id="stock" onchange="filter()">
+<option value="">在庫</option>
+<option value="low">残りわずか</option>
+<option value="out">在庫切れ</option>
+</select>
 
-<a href="/logout" class="btn delete">ログアウト</a>
+<a href="/add" class="btn add">商品追加</a>
 
 </div>
 
 <table>
-<thead>
 <tr>
-<th>名前</th>
+<th>商品名</th>
 <th>ジャンル</th>
 <th>在庫</th>
-<th>操作</th>
+<th>削除・編集</th>
 </tr>
-</thead>
 
-<tbody>
 {% for p in products %}
-<tr data-category="{{ p.category }}" id="row-{{ p.id }}"
-class="{% if p.stock <= 2 %}low-stock-row{% endif %}">
+<tr
+data-name="{{p.name}}"
+data-cat="{{p.category}}"
+data-stock="{{'out' if p.stock==0 else 'low' if p.stock<=4 else 'ok'}}"
+class="{% if p.stock==0 %}out{% elif p.stock<=4 %}low{% endif %}">
 
-<td>{{ p.name }}</td>
-<td>{{ p.category }}</td>
+<td>{{p.name}}</td>
+<td>{{p.category}}</td>
 
 <td>
-<div class="stock-box">
-<span id="stock-{{ p.id }}">{{ p.stock }}</span>
-
-<button class="btn plus" onclick="updateStock({{ p.id }},1)">＋</button>
-<button class="btn minus" onclick="updateStock({{ p.id }},-1)">－</button>
-</div>
+<button class="btn minus" onclick="updateStock({{p.id}},-1)">－</button>
+{{p.stock}}
+<button class="btn plus" onclick="updateStock({{p.id}},1)">＋</button>
 </td>
 
-<td>
-<a href="/delete/{{ p.id }}" class="btn delete"
-onclick="return confirm('削除しますか？')">削除</a>
+<td style="display:flex; gap:5px;">
+<a href="/edit/{{p.id}}" class="btn edit">編集</a>
+
+<a href="/delete/{{p.id}}"
+onclick="return confirm('削除しますか？')"
+class="btn delete">削除</a>
 </td>
 
 </tr>
 {% endfor %}
-</tbody>
 </table>
 
-</div>
-
 <script>
-function updateStock(id, change){
-fetch("/update/"+id+"/"+change)
-.then(r=>r.json())
-.then(d=>{
-if(d.success){
-document.getElementById("stock-"+id).innerText = d.stock;
-}
-});
+function updateStock(id,c){
+fetch("/update/"+id+"/"+c).then(()=>location.reload());
 }
 
-function filterCategory(){
-let val = document.getElementById("categoryFilter").value;
+function filter(){
+let k=document.getElementById("search").value.toLowerCase();
+let c=document.getElementById("cat").value;
+let s=document.getElementById("stock").value;
 
-document.querySelectorAll("tbody tr").forEach(r=>{
-r.style.display = (val=="" || r.dataset.category==val) ? "" : "none";
+document.querySelectorAll("tr[data-name]").forEach(r=>{
+let ok=r.dataset.name.toLowerCase().includes(k)
+&&(c==""||r.dataset.cat==c)
+&&(s==""||r.dataset.stock==s);
+r.style.display=ok?"":"none";
 });
 }
 </script>
